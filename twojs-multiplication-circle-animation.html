@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, user-scalable=no">
+        <title>Sismologie</title>
+        <style>
+            body {
+                margin: 0;
+            }
+            .container {
+                width: 100%;
+                display: flex;
+                justify-content: center;
+                padding-top: 2.5em;
+                align-items: center;
+                flex-direction: column;
+            }
+            .bar {
+                padding-top: 1em;
+                width: 80%;
+                font-size: 2em;
+                display: flex;
+                justify-content: space-between;
+            }
+            .data {
+                width: 5em;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div id="canvas"></div>
+            <div class="bar">
+                <div class="data"><span id="count"></span></div>
+                <div class="buttons">
+                    <button id="previous">
+                        <
+                    </button>
+                    <button id="toggle">Play/Resume</button>
+                    <button id="next">
+                        >
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <script crossorigin="anonymous" integrity="sha256-0qJ0at+6aIXSqYEgj85J5ufSt6+IdiairAk4+OBJLMU=" src="https://cdnjs.cloudflare.com/ajax/libs/two.js/0.6.0/two.min.js"></script>
+        <script>
+            let canvas = document.getElementById('canvas')
+            let two = new Two({
+                width: '400',
+                height: '400',
+                autostart: true
+            }).appendTo(canvas)
+
+            let circleWidth = 200
+            let circleAnchor = [circleWidth, circleWidth]
+            let a = 2
+            let n = 200
+            let circle = two.makeCircle(circleAnchor[0], circleAnchor[1], circleWidth)
+            let angle = Math.PI / (n / 2)
+
+            function getPoint(i) {
+                return {
+                    x: circleAnchor[0] + Math.cos(i * angle) * circleWidth,
+                    y: circleAnchor[1] - Math.sin(i * angle) * circleWidth
+                }
+            }
+            
+            let lines = []
+            function draw() {
+                // two.clear()  
+                let sourcePoint = null
+                let destinationPoint = null
+                let line = null
+                for (var i = 0; i < n; i++) {
+                    sourcePoint = getPoint(i)
+                    destinationPoint = getPoint((i * a) % n)
+                    if (lines[i] != undefined) {
+                        line = lines[i]
+                        line.remove()
+                        line = two.makeLine(
+                            sourcePoint.x,
+                            sourcePoint.y,
+                            destinationPoint.x,
+                            destinationPoint.y
+                        )
+                        line.linewidth = 0.5
+                        lines[i] = line
+                    } else {
+                        line = two.makeLine(
+                            sourcePoint.x,
+                            sourcePoint.y,
+                            destinationPoint.x,
+                            destinationPoint.y
+                        )
+                        line.linewidth = 0.5
+                        lines.push(line)
+                    }
+                }
+
+                two.update()
+            }
+
+            function change(toA) {
+                a = toA
+                draw()
+            }
+
+            let playing = true
+
+            function pause() {
+                playing = false
+            }
+            function play() {
+                playing = true
+                newLoop()
+            }
+            function newLoop() {
+                if (playing) {
+                    draw()
+                    setTimeout(() => {
+                        a += 0.01
+                        document.getElementById('count').innerText = a.toFixed(2)
+                        newLoop()
+                    }, 10)
+                }
+            }
+            function toggle() {
+                if (playing) { 
+                    pause()
+                } else {
+                    play()
+                }
+            }
+            play()
+            
+            function up() {
+                if (a === Math.ceil(a)) {
+                    a += 1
+                } else {
+                    a = Math.ceil(a)
+                }
+                document.getElementById('count').innerText = a.toFixed(2)
+                draw()
+            }
+
+            function down() {
+                if (a === Math.floor(a)) {
+                    a -= 1
+                } else {
+                    a = Math.floor(a)
+                }
+                document.getElementById('count').innerText = a.toFixed(2)
+                draw()
+            }
+
+            document.getElementById('toggle').onclick = toggle;
+            document.getElementById('previous').onclick = down;
+            document.getElementById('next').onclick = up;
+            document.addEventListener("keydown", (key) => {
+                if (key.code === 'Space') {
+                    toggle()
+                }
+                if (key.code === 'ArrowRight') {
+                    up() 
+                }
+                if (key.code === 'ArrowLeft') {
+                    down() 
+                }
+            });
+
+        </script>
+    </body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voronoi Diagram with GPU</title>
+</head>
+<body>
+    <div>
+        <canvas id="glcanvas" width="512" height="512">
+        </canvas>
+    </div>
+    
+    <script id="vertex-shader" type="x-shader/x-vertex">
+    attribute vec2 aVertexPosition;
+    
+    varying vec2 uv;
+
+    void main() {
+        gl_Position = vec4(aVertexPosition.x, aVertexPosition.y, 0, 1.0);
+        uv = vec2(aVertexPosition.x, aVertexPosition.y);
+    }
+    </script>
+    <script id="fragment-shader" type="x-shader/x-fragment">
+    #ifdef GL_ES
+        precision highp float;
+    #endif
+    #define POINTS_COUNT %POINTS_COUNT%
+    
+    uniform sampler2D diagPointsTex;
+    uniform sampler2D diagColorsTex;
+    
+    varying vec2 uv;
+    
+    void main() {
+        int closest = -1;
+        float closestDistance = 0.0;
+        for (int i = 0; i < POINTS_COUNT; ++i) {
+            mediump vec4 _diagPoint = texture2D(diagPointsTex, vec2((float(i)/float(POINTS_COUNT)), 0));
+            vec2 diagPoint = vec2(_diagPoint.x, _diagPoint.y);
+            float d = length(
+                diagPoint - uv
+            );
+            if (i == 0 || d < closestDistance) {
+                closest = i;
+                closestDistance = d;
+            }
+            if (d < 0.008) {
+                gl_FragColor = vec4(1, 1, 1, 1);
+                return;
+            }
+        }
+        gl_FragColor = texture2D(diagColorsTex, vec2((float(closest)/float(POINTS_COUNT)), 1));
+    }
+    </script>
+
+    <script src="app.js"></script>
+    
+</body>
+</html>
+
